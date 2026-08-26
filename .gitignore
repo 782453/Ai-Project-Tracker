@@ -38,3 +38,9 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+### Local runtime data ###
+projects.json
+chatHistory/
+sendFiles/
+data/
