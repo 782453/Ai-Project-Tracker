@@ -41,7 +41,7 @@ public class Chat {
                 f. Scope: Single response. One conclusion.
             """;
     public static void main(String[] args) throws IOException, InterruptedException, NullPointerException {
-        System.out.println("Ai models list:\n[0] Gemini\n[1] ChatGPT\n[2] Qwen");
+        System.out.println("Ai models list:\n[0] Gemini\n[1] ChatGPT\n[2] Qwen\n[3] Nemotron");
         System.out.print("Choose Ai model: ");
         int num;
         try {
@@ -65,6 +65,9 @@ public class Chat {
                 groqModel = "qwen/qwen3.8-27b";
                 System.out.println("Model selected: Qwen");
                 break;
+            case 3:
+                agent = new NvidiaAgent();
+                System.out.println("Model selected: Nvidia");
             default:
                 System.err.println("Invalid choice!");
                 return;

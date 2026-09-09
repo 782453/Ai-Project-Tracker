@@ -54,4 +54,21 @@ public class MessagesMapper {
         messagesNode.set("messages", messagesArray);
         return messagesNode;
     }
+    public ObjectNode NvidiaBuildMessagesNode(List<ChatMessage> messages) {
+        ArrayNode messagesArray = mapper.createArrayNode();
+        for (ChatMessage message : messages) {
+            messagesArray.add(GroqMessageToNode(message));
+        }
+        ObjectNode messagesNode = mapper.createObjectNode();
+        messagesNode.put("model", "nvidia/nemotron-3-ultra-550b-a55b");
+        messagesNode.set("messages", messagesArray);
+        messagesNode.put("temperature", 1.0);
+        messagesNode.put("top_p", 0.95);
+        messagesNode.put("max_tokens", 16384);
+        messagesNode.put("stream", true);
+        ObjectNode chatTemplateKwargs = messagesNode.putObject("chat_template_kwargs");
+        chatTemplateKwargs.put("enable_thinking", true);
+        chatTemplateKwargs.put("force_nonempty_content", true);
+        return messagesNode;
+    }
 }
