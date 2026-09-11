@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lior.tracker.AppPaths;
 import com.lior.tracker.Chat;
 import com.lior.tracker.ChatMessage;
+import com.lior.tracker.gui.HistoryWindow;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -13,28 +14,6 @@ import java.time.LocalDate;
 import java.util.*;
 
 public class ProjectCommands {
-    private static final String SUMM_PROMPT = """
-                        Summarize the conversation compactly for use as future AI context.
-                        Preserve:
-                        -important facts
-                        -user preferences
-                        -decisions already made
-                        -technical details
-                        -variable/class/API/model names
-                        -constraints
-                        -unresolved questions and tasks
-                        -last few messages of our conversation
-                        -save the most important parts of a code blocks, remember method names, variables, and what they do
-                        Remove:
-                        -repetition
-                        -greetings
-                        -filler
-                        -irrelevant conversation
-                        Important:
-                        -Do not invent information!
-                        -Reply only with the summarization, nothing else!
-                        -Maximize the summary to minimize token consumption in the future!
-                        """;
     private static boolean load = false;
     private static boolean summarize = false;
     public static ChatSession commands(ChatSession session) throws IOException {
@@ -44,7 +23,7 @@ public class ProjectCommands {
         switch (session.getUserMessage()) {
             case "/?":
                 System.out.println("""
-                        \tCommands:
+                        \tCommands [PG 1/2]:
                         \t/nchat - Start a fresh chat
                         \t/nproject - Create a new project
                         \t/projects - Project options
@@ -54,14 +33,14 @@ public class ProjectCommands {
                         \t/summarize - Summarize the chat
                         \t/save - Save chat history
                         \t/load - Load chat history
-                        \t/exit - Exit the program""");
+                        \t/++ - Next page""");
                 break;
             case "/nchat":
                 load = false;
                 session.setMessages(new ArrayList<>());
-                if(Chat.isMaximize()) {
-                    session.getMessages().add(new ChatMessage("user", Chat.getMaxPrompt()));
-                    session.getMessages().add(new ChatMessage("model", "OK!"));
+                if(Chat.getRules().isMaxTokens()) {
+                    session.getMessages().add(new ChatMessage("user", Chat.getRules().getMaxPrompt()));
+                    session.getMessages().add(new ChatMessage("model", "Memory updated!"));
                 }
                 if (!Chat.getHistory().isEmpty()) {
                     System.out.print("Save chat history (y/n)? ");
@@ -147,7 +126,7 @@ public class ProjectCommands {
             case "/summarize":
                 if(session.getTokens() >= 1000) {
                     summarize = true;
-                    session.setUserMessage(SUMM_PROMPT);
+                    session.setUserMessage(Rules.getSummPrompt());
                     return session;
                 } else System.out.println("Conversation is too small to summarize!");
                 break;
@@ -159,11 +138,9 @@ public class ProjectCommands {
                 loadHistory();
                 session.setMessages(Chat.getHistory());
                 break;
-            case "/exit":
-                session.setUserMessage("/exit");
-                return session;
             default:
-                System.out.println("'" + session.getUserMessage() + "' is not a valid command");
+                session = ProjectCommands2.commands(session);
+                if(session.getUserMessage().equals("/..")) session.setUserMessage("/?");
                 break;
         }
         if(!isPaste) {

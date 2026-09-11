@@ -22,7 +22,6 @@ public class GroqAgent implements AiAgent {
             sendFile = sendFileToGemini(messages.getLast());
             messages.add(new ChatMessage("model", sendFile));
             messages.add(new ChatMessage("user", "I didn't see your previous message so i need you to reprocess it and send it back to me."));
-            System.exit(0);
         }
         String apiKey = System.getenv("GROQ_API_KEY");
         if(apiKey == null || apiKey.isBlank()) {

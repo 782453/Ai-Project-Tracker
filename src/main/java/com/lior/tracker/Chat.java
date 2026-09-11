@@ -3,6 +3,7 @@ package com.lior.tracker;
 import com.lior.tracker.model.ChatSession;
 import com.lior.tracker.agent.*;
 import com.lior.tracker.model.ProjectCommands;
+import com.lior.tracker.model.Rules;
 
 import java.io.*;
 //import java.net.ServerSocket;
@@ -15,31 +16,7 @@ public class Chat {
     private static List<ChatMessage> msgHistory = new ArrayList<>();
     private static AiAgent agent;
     private static String groqModel;
-    private static boolean maximize = false;
-    private static final String MAX_PROMPT = """
-            I want to minimize token usage so in your replies:
-             Remove:
-             -repetition
-             -greetings
-             -filler:exclude transitional phrases, hedging, pleasantries
-             -irrelevant parts
-             1. **Format**:
-                a. Headers: UPPERCASE labels.
-                b. Lists: Numeric. No bullets.
-                c. Code/JSON: Use ``` delimiters.
-                d. Compression: Fragments, remove articles/prepositions if unambiguous.
-             2. **Style**:
-                a. Verbs: Imperative.
-                b. Tone: Direct. Zero hedging/pleasantries.
-                c. Banned: Repetition, greetings, filler, irrelevant content.
-             3. **Content**:
-                a. Explanations: Ban. State facts only.
-                b. Abbreviations: Define early (domain-specific ISO/W3C), reuse later.
-                c. Context: Minimal. If missing, output "MISSING: [key]".
-                d. Ambiguity Check: If fragment unclear, append max 5 word clarification.
-                e. Exceptions: Safety/Critical failures override compression.
-                f. Scope: Single response. One conclusion.
-            """;
+    private static Rules rules =  new Rules(false, false);
     public static void main(String[] args) throws IOException, InterruptedException, NullPointerException {
         System.out.println("Ai models list:\n[0] Gemini\n[1] ChatGPT\n[2] Qwen\n[3] Nemotron");
         System.out.print("Choose Ai model: ");
@@ -72,8 +49,6 @@ public class Chat {
                 System.err.println("Invalid choice!");
                 return;
         }
-        System.out.print("Maximize token usage (y/n)? ");
-        if (input.nextLine().equalsIgnoreCase("y")) maximize = true;
         chat(agent);
 /*
   int port = 5000;
@@ -108,15 +83,14 @@ public class Chat {
         Result reply = new Result("", 0);
         ChatSession session = new ChatSession(new ArrayList<>(), new ArrayList<>(), reply.text(), reply.tokens());
         while (true) {
-            if(session.getMessages().size() == 0 && maximize) {
-                session.getMessages().add(new ChatMessage("user", MAX_PROMPT));
-                session.getMessages().add(new ChatMessage("model", "OK!"));
-            }
             input.reset();
+            if(session.getTokens() >= 100 && rules.isAutoSummarize()) {
+                System.out.println("Summarizing chat...");
+                Rules.autoSummarize(session, rules);
+            }
             System.out.print("Write a message: ");
             session.setUserMessage(input.nextLine());
             if (!session.getUserMessage().isEmpty() && session.getUserMessage().charAt(0) == '/') session = ProjectCommands.commands(session);
-            if (session.getUserMessage().equals("/exit")) break;
             long startTime = System.currentTimeMillis();
             long endTime = 0;
             System.out.println(agent.getName() + " is thinking...");
@@ -142,6 +116,10 @@ public class Chat {
             if(ProjectCommands.isSummarize()) {
                 ProjectCommands.setSummarize(false);
                 session.getMessages().clear();
+                if(rules.isMaxTokens()) {
+                    session.getMessages().add(new ChatMessage("user", rules.getMaxPrompt()));
+                    session.getMessages().add(new ChatMessage("model", "Memory updated!"));
+                }
                 session.getMessages().add(new ChatMessage("user", "Your next message should be the summary of our chat"));
             }
             session.getMessages().add(new ChatMessage("model", reply.text()));
@@ -162,6 +140,7 @@ public class Chat {
     public static void setHistory(List<ChatMessage> history) {msgHistory = history;}
     public static void resetHistory() {msgHistory.clear();}
     public static String getGroqModel() {return groqModel;}
-    public static boolean isMaximize() {return maximize;}
-    public static String getMaxPrompt() {return MAX_PROMPT;}
+    public static String getAgentName() {return agent.getName();}
+    public static Rules getRules() {return rules;}
+    public static void setRules(Rules rules_) {rules = rules_;}
 }
