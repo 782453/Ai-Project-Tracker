@@ -65,7 +65,7 @@ public class MessagesMapper {
         messagesNode.put("temperature", 1.0);
         messagesNode.put("top_p", 0.95);
         messagesNode.put("max_tokens", 16384);
-        messagesNode.put("stream", true);
+        messagesNode.put("stream", false);
         ObjectNode chatTemplateKwargs = messagesNode.putObject("chat_template_kwargs");
         chatTemplateKwargs.put("enable_thinking", true);
         chatTemplateKwargs.put("force_nonempty_content", true);

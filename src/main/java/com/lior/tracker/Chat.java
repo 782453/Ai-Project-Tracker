@@ -45,6 +45,7 @@ public class Chat {
             case 3:
                 agent = new NvidiaAgent();
                 System.out.println("Model selected: Nvidia");
+                break;
             default:
                 System.err.println("Invalid choice!");
                 return;
@@ -84,7 +85,7 @@ public class Chat {
         ChatSession session = new ChatSession(new ArrayList<>(), new ArrayList<>(), reply.text(), reply.tokens());
         while (true) {
             input.reset();
-            if(session.getTokens() >= 100 && rules.isAutoSummarize()) {
+            if(session.getTokens() >= 5000 && rules.isAutoSummarize()) {
                 System.out.println("Summarizing chat...");
                 Rules.autoSummarize(session, rules);
             }
