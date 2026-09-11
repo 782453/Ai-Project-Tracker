@@ -7,7 +7,6 @@ import com.lior.tracker.agent.GeminiAgent;
 import com.lior.tracker.agent.Result;
 
 import java.io.IOException;
-import java.util.List;
 
 public class Rules {
     private boolean maxTokens;
@@ -80,7 +79,7 @@ public class Rules {
                         """;}
     public static void autoSummarize(ChatSession session, Rules rules) throws IOException, InterruptedException {
         AiAgent agent = new GeminiAgent();
-        Result reply = new Result("", 0);
+        Result reply;
         session.getMessages().add(new ChatMessage("user", getSummPrompt()));
         try {
             reply = agent.ask(session.getMessages(), "default");
@@ -89,6 +88,7 @@ public class Rules {
                 Thread.sleep(20);
                 reply = agent.ask(session.getMessages(), "lite");
             } catch (RuntimeException e1) {
+                return;
             }
         }
         session.getMessages().clear();

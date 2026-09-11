@@ -45,6 +45,7 @@ public class Chat {
             case 3:
                 agent = new NvidiaAgent();
                 System.out.println("Model selected: Nvidia");
+                break;
             default:
                 System.err.println("Invalid choice!");
                 return;
