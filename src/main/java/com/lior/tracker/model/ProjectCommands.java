@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lior.tracker.AppPaths;
 import com.lior.tracker.Chat;
 import com.lior.tracker.ChatMessage;
-import com.lior.tracker.gui.HistoryWindow;
 
 import java.io.IOException;
 import java.nio.file.Files;
