@@ -17,6 +17,7 @@ public class Chat {
     private static String groqModel;
     private static Rules rules =  new Rules(false, false);
     public static void main(String[] args) throws IOException, InterruptedException, NullPointerException {
+        //TODO: implement AppPaths.java
         System.out.println("Ai models list:\n[0] Gemini\n[1] ChatGPT\n[2] Qwen\n[3] Nemotron");
         System.out.print("Choose Ai model: ");
         int num;
