@@ -448,8 +448,8 @@ The application uses a small provider abstraction:
 Provider implementations expose the same core contract:
 
 ```java
-Result ask(List<ChatMessage> messages, String ver)
-String getName()
+Result ask(List<ChatMessage> messages, String ver);
+String getName();
 ```
 
 ### `Result`
