@@ -15,10 +15,10 @@ import java.util.*;
 public class ProjectCommands {
     private static boolean load = false;
     private static boolean summarize = false;
+    private static boolean flag = false;
     public static ChatSession commands(ChatSession session) throws IOException {
         Scanner input = Chat.getInput();
         int num = -1;
-        boolean isPaste = false;
         switch (session.getUserMessage()) {
             case "/?":
                 System.out.println("""
@@ -36,10 +36,14 @@ public class ProjectCommands {
                 break;
             case "/nchat":
                 load = false;
-                session.setMessages(new ArrayList<>());
+                //session.setMessages(new ArrayList<>());
+                session = new ChatSession(new ArrayList<>(), new ArrayList<>(), "", 0);
                 if(Chat.getRules().isMaxTokens()) {
-                    session.getMessages().add(new ChatMessage("user", Chat.getRules().getMaxPrompt()));
-                    session.getMessages().add(new ChatMessage("model", "Memory updated!"));
+                    if(Chat.getAgentName().equals("Nemotron")) session.getMessages().add(new ChatMessage("system", Chat.getRules().getMaxPrompt()));
+                    else {
+                        session.getMessages().add(new ChatMessage("user", Chat.getRules().getMaxPrompt()));
+                        session.getMessages().add(new ChatMessage("model", "Memory updated!"));
+                    }
                 }
                 if (!Chat.getHistory().isEmpty()) {
                     System.out.print("Save chat history (y/n)? ");
@@ -120,7 +124,7 @@ public class ProjectCommands {
             case "/paste":
                 session.setUserMessage(paste(input));
                 input.nextLine();
-                isPaste = true;
+                flag = true;
                 break;
             case "/summarize":
                 if(session.getTokens() >= 1000) {
@@ -135,14 +139,14 @@ public class ProjectCommands {
             case "/load":
                 load = false;
                 loadHistory();
-                session.setMessages(Chat.getHistory());
+                session.setMessages(new ArrayList<>(Chat.getHistory()));
                 break;
             default:
                 session = ProjectCommands2.commands(session);
-                if(session.getUserMessage().equals("/..")) session.setUserMessage("/?");
+                if(session.getUserMessage().equals("/?")) commands(session);
                 break;
         }
-        if(!isPaste) {
+        if(!flag) {
             System.out.print("Write a message: ");
             session.setUserMessage(input.nextLine());
         }
@@ -168,7 +172,6 @@ public class ProjectCommands {
         Path path = Path.of("sendFiles", file);
         if(!Files.exists(path)) {
             System.out.println("File does not exist(make sure it's in files folder)!");
-            session.setUserMessage("error. File does not exist!");
             return;
         }
         String fileBase64 = Base64.getEncoder().encodeToString(Files.readAllBytes(path));
@@ -196,7 +199,7 @@ public class ProjectCommands {
         }
         int num = -1;
         Chat.resetHistory();
-        Path path = Path.of("chatHistory\\");
+        Path path = Path.of("chatHistory");
         try (var stream = Files.list(path)) {
             if(stream.findAny().isEmpty()) {
                 System.out.println("No chat history files found!");
@@ -230,4 +233,5 @@ public class ProjectCommands {
     public static void setLoad(boolean load_) {load = load_;}
     public static boolean isSummarize() {return summarize;}
     public static void setSummarize(boolean summarize_) {summarize = summarize_;}
+    public static void setFlag(boolean flag_) {flag = flag_;}
 }

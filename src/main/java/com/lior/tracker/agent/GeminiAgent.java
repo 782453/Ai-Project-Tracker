@@ -26,16 +26,7 @@ public class GeminiAgent implements AiAgent {
         MessagesMapper mM = new MessagesMapper();
         ObjectNode contentsArray = mM.GeminiBuildContentsNode(messages);
         String requestBody = mM.getMapper().writeValueAsString(contentsArray);
-        /**
-         String requestBody = String.format("""
-         {
-         "contents":[%s],
-         "generationConfig":{
-         "maxOutputTokens":50000
-         }
-         }
-         """, msg);
-         */
+
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))

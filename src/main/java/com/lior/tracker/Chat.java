@@ -44,48 +44,24 @@ public class Chat {
                 break;
             case 3:
                 agent = new NvidiaAgent();
-                System.out.println("Model selected: Nvidia");
+                System.out.println("Model selected: Nemotron");
                 break;
             default:
                 System.err.println("Invalid choice!");
                 return;
         }
         chat(agent);
-/*
-  int port = 5000;
-  *        List<Project> projects = getProjects();
-  *        ServerSocket serverSocket = new ServerSocket(port);
-  *        while (true) {
-  *            Socket clientSocket = serverSocket.accept();
-  *            Thread thread = new Thread(() -> {
-  *                try {
-  *                    handleClient(clientSocket);
-  *                }catch (IOException e) {
-  *                    e.printStackTrace();
-  *                }
-  *            });
-  *            thread.start();
-  *        }
- */
     }
-    /*
-    public static void handleClient(Socket clientSocket) throws IOException {
-        BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-        PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-        out.println("Connected to " + clientSocket.getInetAddress().getHostName());
-        String line;
-        while ((line = in.readLine()) != null) {
-            System.out.println("Received: " + line);
-            out.println("Server received: " + line);
-        }
-    }
-     */
+
     public static void chat(AiAgent agent) throws IOException, InterruptedException {
         Result reply = new Result("", 0);
         ChatSession session = new ChatSession(new ArrayList<>(), new ArrayList<>(), reply.text(), reply.tokens());
+        if(agent instanceof NvidiaAgent) agentInstructions(session.getMessages());
         while (true) {
+            //TODO: implement /resend command (i already check if the message is empty so just add the command in ProjectCommands2)
+            ProjectCommands.setFlag(false);
             input.reset();
-            if(session.getTokens() >= 5000 && rules.isAutoSummarize()) {
+            if(session.getTokens() >= 10000 && rules.isAutoSummarize()) {
                 System.out.println("Summarizing chat...");
                 Rules.autoSummarize(session, rules);
             }
@@ -101,7 +77,10 @@ public class Chat {
                 reply = agent.ask(session.getMessages(), "default");
                 endTime = System.currentTimeMillis() - startTime;
             } catch (RuntimeException e) {
-                System.err.println(e.getMessage() + "\nTrying a different model...");
+                if(agent.getName().equals("Gemini")) {
+                    System.err.println(e.getMessage() + "\nTrying 'Lite' model...");
+                }
+                System.err.println(e.getMessage() + "\nTrying again...");
                 try {
                     Thread.sleep(20);
                     System.out.println(agent.getName() + " is thinking...");
@@ -112,21 +91,26 @@ public class Chat {
                     System.err.println(e1.getMessage());
                 }
             }
-            if (!reply.text().isEmpty()) System.out.println("\n" + agent.getName() + ": " + reply.text() + "\n" +
+            if(!reply.text().isEmpty()) {
+                System.out.println("\n" + agent.getName() + ": " + reply.text() + "\n" +
                         "Thought for " + endTime/1000 + "[s], TTC: " + reply.tokens());
-            if(ProjectCommands.isSummarize()) {
-                ProjectCommands.setSummarize(false);
-                session.getMessages().clear();
-                if(rules.isMaxTokens()) {
-                    session.getMessages().add(new ChatMessage("user", rules.getMaxPrompt()));
-                    session.getMessages().add(new ChatMessage("model", "Memory updated!"));
+                if(ProjectCommands.isSummarize()){
+                    ProjectCommands.setSummarize(false);
+                    session.getMessages().clear();
+                    if(rules.isMaxTokens()) {
+                        if(Chat.getAgentName().equals("Nemotron")) session.getMessages().add(new ChatMessage("system", rules.getMaxPrompt()));
+                        else {
+                            session.getMessages().add(new ChatMessage("user", rules.getMaxPrompt()));
+                            session.getMessages().add(new ChatMessage("model", "Memory updated!"));
+                        }
+                    }
+                    session.getMessages().add(new ChatMessage("user", "Your next message should be the summary of our chat"));
                 }
-                session.getMessages().add(new ChatMessage("user", "Your next message should be the summary of our chat"));
+                session.getMessages().add(new ChatMessage("model", reply.text()));
+                session.setTokens(reply.tokens());
+                if(!ProjectCommands.isLoad()) History(session.getLastTwoMessage());
+                else ProjectCommands.setLoad(false);
             }
-            session.getMessages().add(new ChatMessage("model", reply.text()));
-            session.setTokens(reply.tokens());
-            if(!ProjectCommands.isLoad()) History(session.getLastTwoMessage());
-            else ProjectCommands.setLoad(false);
         }
     }
     public static Scanner getInput() {return input;}
@@ -144,4 +128,10 @@ public class Chat {
     public static String getAgentName() {return agent.getName();}
     public static Rules getRules() {return rules;}
     public static void setRules(Rules rules_) {rules = rules_;}
+    public static void agentInstructions(List<ChatMessage> messages) {
+        System.out.print("Would you like to add instructions (y/n)? ");
+        if (!input.nextLine().equalsIgnoreCase("y")) return;
+        System.out.print("Write instructions: ");
+        messages.add(new ChatMessage("system", input.nextLine()));
+    }
 }

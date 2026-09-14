@@ -32,7 +32,7 @@ public class NvidiaAgent implements AiAgent {
         ObjectNode messagesArray = mM.NvidiaBuildMessagesNode(messages);
         String requestBody = mM.getMapper().writeValueAsString(messagesArray);
 
-        HttpClient client = HttpClient.newHttpClient();
+        HttpClient client = HttpClient.newHttpClient(); //thinking about making it one for all the calls
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .header("Content-Type", "application/json")

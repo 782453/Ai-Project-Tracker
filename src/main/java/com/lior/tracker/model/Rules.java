@@ -4,6 +4,7 @@ import com.lior.tracker.Chat;
 import com.lior.tracker.ChatMessage;
 import com.lior.tracker.agent.AiAgent;
 import com.lior.tracker.agent.GeminiAgent;
+import com.lior.tracker.agent.NvidiaAgent;
 import com.lior.tracker.agent.Result;
 
 import java.io.IOException;
@@ -79,6 +80,7 @@ public class Rules {
                         """;}
     public static void autoSummarize(ChatSession session, Rules rules) throws IOException, InterruptedException {
         AiAgent agent = new GeminiAgent();
+        if(Chat.getAgentName().equals("Nemotron")) agent = new NvidiaAgent();
         Result reply;
         session.getMessages().add(new ChatMessage("user", getSummPrompt()));
         try {
@@ -91,10 +93,14 @@ public class Rules {
                 return;
             }
         }
+        if(reply.text().isEmpty()) return;
         session.getMessages().clear();
         if(rules.isMaxTokens()) {
-            session.getMessages().add(new ChatMessage("user", rules.getMaxPrompt()));
-            session.getMessages().add(new ChatMessage("model", "Memory updated!"));
+            if(Chat.getAgentName().equals("Nemotron")) session.getMessages().add(new ChatMessage("system", rules.getMaxPrompt()));
+            else {
+                session.getMessages().add(new ChatMessage("user", rules.getMaxPrompt()));
+                session.getMessages().add(new ChatMessage("model", "Memory updated!"));
+            }
         }
         session.getMessages().add(new ChatMessage("user", "Your next message should be the summary of our chat"));
         session.getMessages().add(new ChatMessage("model", reply.text()));

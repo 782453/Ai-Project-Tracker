@@ -32,14 +32,25 @@ public class ProjectCommands2 {
                 if (input.nextLine().equalsIgnoreCase("y")) Chat.setRules(new Rules());
                 else break;
                 if(Chat.getRules().isMaxTokens()) {
-                    session.getMessages().add(new ChatMessage("user", Chat.getRules().getMaxPrompt()));
-                    session.getMessages().add(new ChatMessage("model", "Memory updated!"));
+                    if(Chat.getAgentName().equals("Nemotron")) session.getMessages().add(new ChatMessage("system", Chat.getRules().getMaxPrompt()));
+                    else {
+                        session.getMessages().add(new ChatMessage("user", Chat.getRules().getMaxPrompt()));
+                        session.getMessages().add(new ChatMessage("model", "Memory updated!"));
+                    }
                 }
+                break;
+            case "/resend":
+                if (session.getMessages().isEmpty()) break;
+                if(session.getMessages().getLast().getRole().equals("model")) break;
+                ProjectCommands.setFlag(true);
+                session.setUserMessage(session.getMessages().getLast().getText());
+                session.getMessages().removeLast();
                 break;
             case "/exit":
                 System.exit(0);
                 break;
             case "/..":
+                session.setUserMessage("/?");
                 return session;
             default:
                 System.out.println("'" + session.getUserMessage() + "' is not a valid command");
