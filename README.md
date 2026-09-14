@@ -598,22 +598,6 @@ Prompts, conversation history, and attachments are sent to the selected external
 
 ### Repository hygiene
 
-This source snapshot does **not** contain a `.gitignore` file. Before publishing the repository, create one and at minimum consider excluding:
-
-```gitignore
-.idea/
-*.iml
-target/
-projects.json
-chatHistory/
-sendFiles/
-data/
-.env
-*.env
-```
-
-Whether `projects.json` should be ignored depends on whether it is intended as example data or private working data. If you want an example in Git, prefer a separate file such as `projects.example.json`.
-
 ---
 
 ## Current Limitations
