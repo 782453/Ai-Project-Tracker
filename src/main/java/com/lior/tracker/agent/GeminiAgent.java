@@ -14,6 +14,8 @@ import java.net.http.HttpResponse;
 import java.util.List;
 
 public class GeminiAgent implements AiAgent {
+    private final boolean stream = false;
+    public boolean isStream(){return this.stream;}
     private final String name = "Gemini";
     public Result ask(List<ChatMessage> messages, String ver) throws IOException, InterruptedException {
         String apiKey = System.getenv("GEMINI_API_KEY");

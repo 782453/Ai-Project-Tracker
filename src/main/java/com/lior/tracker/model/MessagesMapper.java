@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.lior.tracker.Chat;
 import com.lior.tracker.ChatMessage;
+import com.lior.tracker.agent.GroqAgent;
+import com.lior.tracker.agent.NvidiaAgent;
 
 import java.util.List;
 
@@ -52,6 +54,11 @@ public class MessagesMapper {
         ObjectNode messagesNode = mapper.createObjectNode();
         messagesNode.put("model", Chat.getGroqModel());
         messagesNode.set("messages", messagesArray);
+        messagesNode.put("stream", GroqAgent.isStream());
+        if(NvidiaAgent.isStream()) {
+            ObjectNode streamNode = messagesNode.putObject("stream_options");
+            streamNode.put("include_usage", true);
+        }
         return messagesNode;
     }
     public ObjectNode NvidiaBuildMessagesNode(List<ChatMessage> messages) {
@@ -65,9 +72,13 @@ public class MessagesMapper {
         messagesNode.put("temperature", 1.0);
         messagesNode.put("top_p", 0.95);
         messagesNode.put("max_tokens", 16384);
-        messagesNode.put("stream", false);
+        messagesNode.put("stream", NvidiaAgent.isStream());
+        if(NvidiaAgent.isStream()) {
+            ObjectNode streamNode = messagesNode.putObject("stream_options");
+            streamNode.put("include_usage", true);
+        }
         ObjectNode chatTemplateKwargs = messagesNode.putObject("chat_template_kwargs");
-        chatTemplateKwargs.put("enable_thinking", true);
+        chatTemplateKwargs.put("enable_thinking", false);
         chatTemplateKwargs.put("force_nonempty_content", true);
         return messagesNode;
     }

@@ -17,6 +17,7 @@ public class ProjectCommands2 {
                         \t/history - View chat history
                         \t/fhistory - View entire session history
                         \t/rules - Change session rules
+                        \t/resend - Resend last message
                         \t/exit - Exit the program
                         \t/.. - Previous page""");
                 break;

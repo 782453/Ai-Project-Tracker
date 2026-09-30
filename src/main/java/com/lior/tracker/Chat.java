@@ -92,8 +92,10 @@ public class Chat {
                 }
             }
             if(!reply.text().isEmpty()) {
-                System.out.println("\n" + agent.getName() + ": " + reply.text() + "\n" +
-                        "Thought for " + endTime/1000 + "[s], TTC: " + reply.tokens());
+                if(!AiAgent.isStream()) {
+                    System.out.println("\n" + agent.getName() + ": " + reply.text() + "\n" +
+                            "Thought for " + endTime / 1000 + "[s], TTC: " + reply.tokens());
+                } else System.out.println("\n" + "Thought for " + endTime / 1000 + "[s], TTC: " + reply.tokens());
                 if(ProjectCommands.isSummarize()){
                     ProjectCommands.setSummarize(false);
                     session.getMessages().clear();
