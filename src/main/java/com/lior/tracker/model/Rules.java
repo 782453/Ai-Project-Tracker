@@ -8,16 +8,22 @@ import com.lior.tracker.agent.NvidiaAgent;
 import com.lior.tracker.agent.Result;
 
 import java.io.IOException;
+import java.util.UUID;
 
 public class Rules {
     private boolean maxTokens;
     private boolean autoSummarize;
+    private boolean autoSave;
+    private String uuid;
     public Rules() {
         System.out.print("maxTokens: ");
         setMaxTokens(Chat.getInput().nextBoolean());
         System.out.print("autoSummarize: ");
         setAutoSummarize(Chat.getInput().nextBoolean());
+        System.out.print("autoSummarize: ");
+        setAutoSave(Chat.getInput().nextBoolean());
         Chat.getInput().nextLine();
+        this.uuid = UUID.randomUUID().toString();
     }
     public Rules(boolean maxTokens, boolean autoSummarize) {
         this.maxTokens = maxTokens;
@@ -27,6 +33,9 @@ public class Rules {
     public boolean isMaxTokens() {return this.maxTokens;}
     public void setAutoSummarize(boolean autoSummarize) {this.autoSummarize = autoSummarize;}
     public boolean isAutoSummarize() {return this.autoSummarize;}
+    public void setAutoSave(boolean autoSave) {this.autoSave = autoSave;}
+    public boolean isAutoSave() {return this.autoSave;}
+
     public void getRules() {
         System.out.println("Rules:\nmaxTokens: " + this.maxTokens + "\nautoSummarize: " + this.autoSummarize);
     }
