@@ -6,6 +6,7 @@ import com.lior.tracker.model.ProjectCommands;
 import com.lior.tracker.model.Rules;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -15,9 +16,10 @@ public class Chat {
     private static List<ChatMessage> msgHistory = new ArrayList<>();
     private static AiAgent agent;
     private static String groqModel;
-    private static Rules rules =  new Rules(false, false);
+    private static Rules rules =  new Rules(false, false, false);
     public static void main(String[] args) throws IOException, InterruptedException, NullPointerException {
-        //TODO: implement AppPaths.java
+        dataCheck();
+        System.out.println("AI-Project-Tracker");
         System.out.println("Ai models list:\n[0] Gemini\n[1] ChatGPT\n[2] Qwen\n[3] Nemotron");
         System.out.print("Choose Ai model: ");
         int num;
@@ -57,8 +59,10 @@ public class Chat {
         Result reply = new Result("", 0);
         ChatSession session = new ChatSession(new ArrayList<>(), new ArrayList<>(), reply.text(), reply.tokens());
         if(agent instanceof NvidiaAgent) agentInstructions(session.getMessages());
+        System.out.print("\nDefault Session " + getRules().toString() + "\n\n"); //print default rules
+        System.out.println("Enter /? to view commands");
         while (true) {
-            //TODO: implement /resend command (i already check if the message is empty so just add the command in ProjectCommands2)
+            //TODO: test /resend command
             ProjectCommands.setFlag(false);
             input.reset();
             if(session.getTokens() >= 10000 && rules.isAutoSummarize()) {
@@ -92,7 +96,7 @@ public class Chat {
                 }
             }
             if(!reply.text().isEmpty()) {
-                if(!AiAgent.isStream()) {
+                if(!agent.isStream()) {
                     System.out.println("\n" + agent.getName() + ": " + reply.text() + "\n" +
                             "Thought for " + endTime / 1000 + "[s], TTC: " + reply.tokens());
                 } else System.out.println("\n" + "Thought for " + endTime / 1000 + "[s], TTC: " + reply.tokens());
@@ -113,6 +117,7 @@ public class Chat {
                 if(!ProjectCommands.isLoad()) History(session.getLastTwoMessage());
                 else ProjectCommands.setLoad(false);
             }
+            if(!session.getMessages().isEmpty() && rules.isAutoSave()) Rules.autoSaveChat(session, rules.getUuid());
         }
     }
     public static Scanner getInput() {return input;}
@@ -136,4 +141,13 @@ public class Chat {
         System.out.print("Write instructions: ");
         messages.add(new ChatMessage("system", input.nextLine()));
     }
+    public static void dataCheck() throws IOException{
+        if(!Files.exists(AppPaths.DATA)) Files.createDirectory(AppPaths.DATA);
+        if(!Files.exists(AppPaths.PROJECTS)) Files.createFile(AppPaths.PROJECTS);
+        if(!Files.exists(AppPaths.HISTORY)) Files.createDirectory(AppPaths.HISTORY);
+        if(!Files.exists(AppPaths.FILES)) Files.createDirectory(AppPaths.FILES);
+        if(!Files.exists(AppPaths.AUTOSAVE)) Files.createDirectory(AppPaths.AUTOSAVE);
+
+    }
+    public static AiAgent getAgent() {return agent;}
 }

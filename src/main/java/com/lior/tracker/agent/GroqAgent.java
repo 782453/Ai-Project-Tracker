@@ -21,8 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GroqAgent implements AiAgent {
-    private static final boolean stream = true;
-    public static boolean isStream(){return stream;}
+    private final boolean stream = true;
+    public boolean isStream(){return this.stream;}
     public Result ask(List<ChatMessage> messages, String ver) throws IOException, InterruptedException {
         String sendFile;
         if (messages.getLast().getInline_data() != null) {
@@ -67,7 +67,7 @@ public class GroqAgent implements AiAgent {
         return "ChatGPT";
     }
     public String sendFileToGemini(ChatMessage message) throws IOException, InterruptedException {
-        List<ChatMessage> base64File = new ArrayList<ChatMessage>();
+        List<ChatMessage> base64File = new ArrayList<>();
         base64File.add(message);
         AiAgent agent = new GeminiAgent();
         Result reply = new Result("", 0);
@@ -116,7 +116,7 @@ public class GroqAgent implements AiAgent {
                 String chunk = contentNode.asText();
                 if (chunk.isEmpty()) continue;
                 if (first) {
-                    System.out.println("\n" + Chat.getAgentName() + ": ");
+                    System.out.print(Chat.getAgentName() + ": ");
                     first = false;
                 }
                 System.out.print(chunk);

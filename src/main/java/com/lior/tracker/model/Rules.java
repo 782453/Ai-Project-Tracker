@@ -1,5 +1,6 @@
 package com.lior.tracker.model;
 
+import com.lior.tracker.AppPaths;
 import com.lior.tracker.Chat;
 import com.lior.tracker.ChatMessage;
 import com.lior.tracker.agent.AiAgent;
@@ -8,26 +9,31 @@ import com.lior.tracker.agent.NvidiaAgent;
 import com.lior.tracker.agent.Result;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class Rules {
     private boolean maxTokens;
     private boolean autoSummarize;
     private boolean autoSave;
-    private String uuid;
+    private final String uuid = UUID.randomUUID().toString();
     public Rules() {
         System.out.print("maxTokens: ");
         setMaxTokens(Chat.getInput().nextBoolean());
         System.out.print("autoSummarize: ");
         setAutoSummarize(Chat.getInput().nextBoolean());
-        System.out.print("autoSummarize: ");
+        System.out.print("autoSave: ");
         setAutoSave(Chat.getInput().nextBoolean());
         Chat.getInput().nextLine();
-        this.uuid = UUID.randomUUID().toString();
     }
-    public Rules(boolean maxTokens, boolean autoSummarize) {
+    public Rules(boolean maxTokens, boolean autoSummarize, boolean autoSave) {
         this.maxTokens = maxTokens;
         this.autoSummarize = autoSummarize;
+        this.autoSave = autoSave;
     }
     public void setMaxTokens(boolean maxTokens) {this.maxTokens = maxTokens;}
     public boolean isMaxTokens() {return this.maxTokens;}
@@ -35,10 +41,10 @@ public class Rules {
     public boolean isAutoSummarize() {return this.autoSummarize;}
     public void setAutoSave(boolean autoSave) {this.autoSave = autoSave;}
     public boolean isAutoSave() {return this.autoSave;}
-
-    public void getRules() {
-        System.out.println("Rules:\nmaxTokens: " + this.maxTokens + "\nautoSummarize: " + this.autoSummarize);
-    }
+    public String getUuid() {return this.uuid;}
+    @Override
+    public String toString() {return "Rules:\nmaxTokens: " + this.maxTokens + " - Minimize token usage\nautoSummarize: " + this.autoSummarize +
+            " - Auto summarize chat\nautoSave: " + this.autoSave + " - Auto save chat";}
     public String getMaxPrompt() {
         return """
             I want to minimize token usage so in your replies:
@@ -113,5 +119,21 @@ public class Rules {
         }
         session.getMessages().add(new ChatMessage("user", "Your next message should be the summary of our chat"));
         session.getMessages().add(new ChatMessage("model", reply.text()));
+    }
+    public static void autoSaveChat(ChatSession session, String uuid) {
+        if(session.getMessages().isEmpty()) return;
+        List<ChatMessage> temp = new ArrayList<>();
+        temp.addAll(session.getLastTwoMessage());
+        uuid = "/" + uuid + ".txt";
+        Path path = Path.of(AppPaths.AUTOSAVE + uuid);
+        for(ChatMessage line : temp) {
+            try {
+                if(!Files.exists(path)) Files.createFile(path); //if the file doesn't exist it will create it
+                Files.write(path, ("[" + line.getRole() + "]\n").getBytes(), StandardOpenOption.APPEND); //append to not override the file!
+                Files.write(path, (line.getText() + "\n\n").getBytes(), StandardOpenOption.APPEND); //append to not override the file!
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 }

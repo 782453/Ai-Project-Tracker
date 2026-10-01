@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.util.Scanner;
 
 public class ProjectCommands2 {
-    public static ChatSession commands(ChatSession session) throws IOException {
+    public static ChatSession commands(ChatSession session) {
         Scanner input = Chat.getInput();
         switch (session.getUserMessage()) {
             case "/++":
@@ -28,7 +28,7 @@ public class ProjectCommands2 {
                 HistoryWindow.open(Chat.getHistory());
                 break;
             case "/rules":
-                Chat.getRules().getRules();
+                System.out.println(Chat.getRules().toString());
                 System.out.print("Edit chat rules (y/n)? ");
                 if (input.nextLine().equalsIgnoreCase("y")) Chat.setRules(new Rules());
                 else break;

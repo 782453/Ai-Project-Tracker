@@ -8,8 +8,5 @@ import java.util.List;
 public interface AiAgent {
     Result ask(List<ChatMessage> messages, String ver) throws IOException, InterruptedException;
     String getName();
-
-    static boolean isStream() {
-        return false;
-    }
+    boolean isStream();
 }

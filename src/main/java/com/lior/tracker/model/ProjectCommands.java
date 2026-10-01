@@ -161,15 +161,15 @@ public class ProjectCommands {
     public static void saveProjects(List<Project> projects) throws IOException {
         if(projects.isEmpty()) projects.add(new Project("", "" + Project.Status.BLOCKED, "0000-00-00", "Just add a project to save..."));
         ObjectMapper mapper = new ObjectMapper();
-        Path path = Path.of("projects.json");
+        Path path = Path.of(AppPaths.PROJECTS.toUri());
         mapper.writerWithDefaultPrettyPrinter().writeValue(path.toFile(), projects);
         System.out.println("Projects saved!");
     }
     public static void sendFile(ChatSession session) throws IOException {
-        Files.createDirectories(Path.of("sendFiles"));
+        Files.createDirectories(AppPaths.FILES);
         System.out.print("Enter file name: ");
         String file = Chat.getInput().nextLine();
-        Path path = Path.of("sendFiles", file);
+        Path path = Path.of(AppPaths.FILES + "/" + file);
         if(!Files.exists(path)) {
             System.out.println("File does not exist(make sure it's in files folder)!");
             return;
@@ -184,22 +184,22 @@ public class ProjectCommands {
             System.out.println("No previous messages found!");
             return;
         }
-        Files.createDirectories(Path.of("chatHistory"));
+        Files.createDirectories(AppPaths.HISTORY);
         System.out.print("Enter chat name: ");
         String chatName = Chat.getInput().nextLine() + "-" + LocalDate.now().toString() + "-" + UUID.randomUUID().toString();
-        Path path = Path.of("chatHistory", chatName + ".json");
+        Path path = Path.of(AppPaths.HISTORY + "/" + chatName + ".json");
         ObjectMapper mapper = new ObjectMapper();
         mapper.writerWithDefaultPrettyPrinter().writeValue(path.toFile(), msgHistory);
         System.out.println("History saved as: " + chatName + ".json");
     }
     public static void loadHistory() throws IOException {
-        if(!Files.exists(Path.of("chatHistory"))) {
+        if(!Files.exists(AppPaths.HISTORY)) {
             System.out.println("Missing chatHistory folder!");
             return;
         }
         int num = -1;
         Chat.resetHistory();
-        Path path = Path.of("chatHistory");
+        Path path = AppPaths.HISTORY;
         try (var stream = Files.list(path)) {
             if(stream.findAny().isEmpty()) {
                 System.out.println("No chat history files found!");
