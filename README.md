@@ -1,100 +1,122 @@
 # AI Project Tracker
 
-![Java](https://img.shields.io/badge/Java-25-ED8B00?logo=openjdk&logoColor=white)
-![Maven](https://img.shields.io/badge/Maven-3.x-C71A36?logo=apachemaven&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-green.svg)
-![Interface](https://img.shields.io/badge/Interface-CLI-blue)
+A Java command-line AI workspace for chatting with multiple AI providers while keeping project notes, conversation history, file attachments, token-aware summaries, and session rules in one place.
 
-A Java command-line application that combines **multi-provider AI chat** with **lightweight project tracking**, local chat-history persistence, conversation summarization, and file-assisted prompts.
+The application currently supports **Google Gemini**, **Groq-hosted GPT-OSS and Qwen models**, and **NVIDIA Nemotron** through a shared `AiAgent` interface. Groq and NVIDIA responses can be streamed directly to the console.
 
-The application can chat with Gemini, GPT-OSS and Qwen through Groq, or NVIDIA Nemotron; save and restore conversations; attach local files; maintain project notes; and inject project context into the active AI conversation.
-
-> **Development status:** active / experimental. The core application works, but several areas listed under [Current limitations](#current-limitations) are still being improved.
-
----
-
-## Table of Contents
-
-- [Features](#features)
-- [AI Providers and Models](#ai-providers-and-models)
-- [Requirements](#requirements)
-- [Installation](#installation)
-- [API Keys](#api-keys)
-- [Running the Application](#running-the-application)
-- [Commands](#commands)
-- [Project Tracking](#project-tracking)
-- [Chat History](#chat-history)
-- [File Attachments](#file-attachments)
-- [Conversation Rules and Summarization](#conversation-rules-and-summarization)
-- [Architecture](#architecture)
-- [Project Structure](#project-structure)
-- [Data Storage](#data-storage)
-- [Error Handling](#error-handling)
-- [Security and Privacy](#security-and-privacy)
-- [Current Limitations](#current-limitations)
-- [Development Roadmap](#development-roadmap)
-- [License](#license)
+> **Project status:** active development. The CLI is the primary interface. A Swing history viewer is available, while the full `ChatWindow` GUI is not implemented yet.
 
 ---
 
 ## Features
 
-- Multi-provider AI chat using a common `AiAgent` interface.
-- Google Gemini support.
-- GPT-OSS and Qwen support through Groq.
-- NVIDIA Nemotron support through NVIDIA NIM.
-- Multi-turn conversation context.
-- Project creation and status tracking.
-- Project notes that can be injected into the active chat.
-- Local JSON chat-history save/load.
-- Manual and automatic conversation summarization.
-- Optional token-compression instructions.
-- Local file attachment support.
-- Multi-line paste mode.
-- Swing history viewer.
-- API-reported token usage and request-duration display.
+- Multi-provider AI chat through one common interface
+- Gemini, GPT-OSS, Qwen, and Nemotron model options
+- Streaming output for Groq and NVIDIA responses
+- Token usage tracking from provider responses
+- Manual and automatic conversation summarization
+- Project tracking with status and notes
+- File attachments using Base64 encoding
+- Saved chat history with reload support
+- Automatic plain-text chat autosaves
+- Configurable per-session rules
+- Read-only Swing windows for current and full conversation history
+- Local runtime data separated under the `data/` directory
+- API keys loaded from environment variables rather than source code
 
 ---
 
-## AI Providers and Models
+## Tech Stack
 
-The current source code exposes four startup options:
+| Component | Technology |
+|---|---|
+| Language | Java 25 |
+| Build tool | Maven |
+| JSON | Jackson Databind 2.22.1 |
+| HTTP | Java `HttpClient` |
+| Desktop UI | Swing |
+| Persistence | Local JSON / text files |
+| AI APIs | Google Gemini, Groq, NVIDIA NIM |
 
-| CLI option | Display name | Provider | Model ID | Required environment variable |
-|---:|---|---|---|---|
-| `0` | Gemini | Google Gemini API | `gemini-3.5-flash` | `GEMINI_API_KEY` |
-| fallback | Gemini Lite | Google Gemini API | `gemini-3.5-flash-lite` | `GEMINI_API_KEY` |
-| `1` | ChatGPT | Groq | `openai/gpt-oss-120b` | `GROQ_API_KEY` |
-| `2` | Qwen | Groq | `qwen/qwen3.8-27b` | `GROQ_API_KEY` |
-| `3` | Nemotron | NVIDIA NIM | `nvidia/nemotron-3-ultra-550b-a55b` | `NVIDIA_API_KEY` |
+No provider SDK is required. API requests are built and sent directly with Java's standard HTTP client.
 
-> **Note:** option `1` is labeled `ChatGPT` in the CLI, but the application does **not** call the ChatGPT product or OpenAI API. It sends requests to Groq using the `openai/gpt-oss-120b` model ID.
+---
 
-### Provider endpoints used by the code
+## Supported AI Models
 
-- Gemini: `https://generativelanguage.googleapis.com/v1/models/{model}:generateContent`
-- Groq: `https://api.groq.com/openai/v1/chat/completions`
-- NVIDIA: `https://integrate.api.nvidia.com/v1/chat/completions`
+The current model selection in `Chat.java` is:
 
-No provider SDK is required. Requests are sent with Java's built-in `HttpClient` and JSON is handled with Jackson.
+| CLI option | Display name | Provider | Model |
+|---:|---|---|---|
+| `0` | Gemini | Google Gemini API | `gemini-3.5-flash` |
+| fallback | Gemini Lite | Google Gemini API | `gemini-3.5-flash-lite` |
+| `1` | ChatGPT | Groq | `openai/gpt-oss-120b` |
+| `2` | Qwen | Groq | `qwen/qwen3.8-27b` |
+| `3` | Nemotron | NVIDIA NIM | `nvidia/nemotron-3-ultra-550b-a55b` |
+
+> **Note:** option `1` is currently displayed as `ChatGPT` in the CLI, but the application is not calling the ChatGPT product or OpenAI API. It uses the open-weight `openai/gpt-oss-120b` model through Groq.
+
+Model IDs are currently configured directly in source code and may need to be updated if a provider changes model availability.
 
 ---
 
 ## Requirements
 
 - **JDK 25**
-- **Apache Maven 3.x**
+- **Apache Maven**
 - Internet connection
-- At least one API key for the provider you intend to use
+- At least one API key for the provider you want to use
 
-The Maven configuration currently targets Java 25:
+The Maven project currently targets Java 25:
 
 ```xml
 <maven.compiler.source>25</maven.compiler.source>
 <maven.compiler.target>25</maven.compiler.target>
 ```
 
-The code also uses modern collection methods such as `List.getLast()` and `removeLast()`.
+---
+
+## API Keys
+
+The application reads provider credentials from environment variables.
+
+| Provider | Environment variable |
+|---|---|
+| Gemini | `GEMINI_API_KEY` |
+| Groq | `GROQ_API_KEY` |
+| NVIDIA | `NVIDIA_API_KEY` |
+
+### Windows PowerShell
+
+For the current terminal session:
+
+```powershell
+$env:GEMINI_API_KEY="your-key"
+$env:GROQ_API_KEY="your-key"
+$env:NVIDIA_API_KEY="your-key"
+```
+
+For persistent Windows environment variables:
+
+```powershell
+setx GEMINI_API_KEY "your-key"
+setx GROQ_API_KEY "your-key"
+setx NVIDIA_API_KEY "your-key"
+```
+
+Open a new terminal after using `setx`.
+
+### macOS / Linux
+
+```bash
+export GEMINI_API_KEY="your-key"
+export GROQ_API_KEY="your-key"
+export NVIDIA_API_KEY="your-key"
+```
+
+You only need the key for the provider you intend to use, except when using file attachments with Groq or NVIDIA. Those attachment paths currently use Gemini as an intermediate file-processing step and therefore also require `GEMINI_API_KEY`.
+
+> Never commit real API keys to GitHub. Keep them in environment variables or another local secrets mechanism.
 
 ---
 
@@ -103,84 +125,52 @@ The code also uses modern collection methods such as `List.getLast()` and `remov
 Clone the repository:
 
 ```bash
-git clone https://github.com/<your-username>/ai-project-tracker.git
+git clone https://github.com/782453/ai-project-tracker.git
 cd ai-project-tracker
 ```
 
-Build it:
+Compile/package with Maven:
 
 ```bash
 mvn clean package
 ```
 
-Or open the project directly in IntelliJ IDEA as a Maven project.
+The application entry point is:
+
+```text
+com.lior.tracker.Chat
+```
 
 ### IntelliJ IDEA
 
-1. Open the repository directory.
-2. Allow IntelliJ to import the Maven project.
-3. Make sure the project SDK is set to **JDK 25**.
-4. Add the API keys you need under:
+The simplest development workflow is:
 
-```text
-Run -> Edit Configurations -> Environment variables
-```
+1. Open the repository as a Maven project.
+2. Set the Project SDK to **JDK 25**.
+3. Let Maven resolve Jackson.
+4. Open `src/main/java/com/lior/tracker/Chat.java`.
+5. Run `Chat.main()`.
 
-5. Run `com.lior.tracker.Chat`.
-
----
-
-## API Keys
-
-The application reads API keys from environment variables at request time.
-
-### Required names
-
-```text
-GEMINI_API_KEY
-GROQ_API_KEY
-NVIDIA_API_KEY
-```
-
-You only need the key for the provider you use, with one exception: Groq and NVIDIA file attachments are currently preprocessed through Gemini, so attachment use with those providers also requires `GEMINI_API_KEY`.
-
-### Windows PowerShell - current terminal
-
-```powershell
-$env:GEMINI_API_KEY="your_key_here"
-$env:GROQ_API_KEY="your_key_here"
-$env:NVIDIA_API_KEY="your_key_here"
-```
-
-### Windows - persistent variables
-
-```powershell
-setx GEMINI_API_KEY "your_key_here"
-setx GROQ_API_KEY "your_key_here"
-setx NVIDIA_API_KEY "your_key_here"
-```
-
-Open a new terminal after using `setx`.
-
-### macOS / Linux
-
-```bash
-export GEMINI_API_KEY="your_key_here"
-export GROQ_API_KEY="your_key_here"
-export NVIDIA_API_KEY="your_key_here"
-```
-
-Do **not** hard-code API keys in Java source files or commit them to Git.
+The current `pom.xml` does not configure a shaded/fat JAR, so running directly from the IDE is the easiest option during development.
 
 ---
 
-## Running the Application
+## First Run
 
-Run the main class from IntelliJ, or use your preferred Maven/Java execution workflow.
-
-At startup the CLI displays:
+At startup the application creates its local runtime directories if they do not already exist:
 
 ```text
+data/
+├── projects.json
+├── chatHistory/
+├── sendFiles/
+└── autoSave/
+```
+
+It then displays the model selector:
+
+```text
+AI-Project-Tracker
 Ai models list:
 [0] Gemini
 [1] ChatGPT
@@ -189,51 +179,59 @@ Ai models list:
 Choose Ai model:
 ```
 
-If Nemotron is selected, the program additionally offers an optional system instruction:
+After a model is selected, a default session starts with all optional session rules disabled.
 
-```text
-Would you like to add instructions (y/n)?
-```
-
-After that, the chat loop starts.
+When Nemotron is selected, the application also offers the option to add an initial system instruction before the conversation begins.
 
 ---
 
 ## Commands
 
-Type `/?` in the chat to open page 1 of the command menu.
+Enter:
+
+```text
+/?
+```
+
+to display the first command page.
 
 ### Page 1
 
-| Command | Action |
+| Command | Description |
 |---|---|
 | `/nchat` | Start a fresh chat session |
 | `/nproject` | Create a new tracked project |
-| `/projects` | List/select project operations |
+| `/projects` | List projects and open project actions |
 | `/sprojects` | Save the current project list |
-| `/send` | Attach a file from `sendFiles/` |
-| `/paste` | Paste multi-line text until `eof` |
-| `/summarize` | Manually summarize a sufficiently large chat |
-| `/save` | Save full chat history to JSON |
+| `/send` | Attach and send a file from `data/sendFiles/` |
+| `/paste` | Paste a large multi-line message using `eof` as the delimiter |
+| `/summarize` | Summarize the current conversation context |
+| `/save` | Save the accumulated chat history |
 | `/load` | Load a previously saved chat |
 | `/++` | Open command page 2 |
 
 ### Page 2
 
-| Command | Action |
+| Command | Description |
 |---|---|
-| `/history` | Open the active model context in a Swing window |
+| `/history` | Open the active AI context in a Swing history window |
 | `/fhistory` | Open the full accumulated session history |
-| `/rules` | View/change token-related chat rules |
-| `/resend` | Experimental resend/regeneration command |
+| `/rules` | View or change session rules |
+| `/resend` | Resend the most recent pending user message |
 | `/exit` | Exit the application |
-| `/..` | Return to page 1 |
+| `/..` | Return to command page 1 |
 
 ---
 
 ## Project Tracking
 
-Projects are represented by `Project` and contain:
+Projects are represented by the `Project` class and stored in:
+
+```text
+data/projects.json
+```
+
+Each project contains:
 
 ```text
 name
@@ -242,7 +240,7 @@ lastUpdated
 notes
 ```
 
-Supported statuses are:
+Available statuses are:
 
 ```text
 ACTIVE
@@ -251,7 +249,7 @@ PAUSED
 DONE
 ```
 
-### Create a project
+### Creating a project
 
 Use:
 
@@ -259,16 +257,9 @@ Use:
 /nproject
 ```
 
-The CLI asks for:
+The application asks for the project name, status, last-updated date, and notes, then saves the updated project list.
 
-1. Project name
-2. Project status
-3. Last-updated date
-4. Notes
-
-The project list is then saved to `projects.json`.
-
-### Manage projects
+### Working with an existing project
 
 Use:
 
@@ -276,122 +267,125 @@ Use:
 /projects
 ```
 
-After selecting a project, the current options are:
+After selecting a project, the current actions are:
 
-```text
-[w]   Work on project
-[c]   Change project status
-[a]   Add notes
-[DEL] Delete project
-```
+| Option | Action |
+|---|---|
+| `w` | Add the project name and notes to the AI conversation context |
+| `c` | Change the project status |
+| `a` | Append project notes |
+| `DEL` | Delete the selected project |
 
-`w` injects the selected project's name and notes into the active conversation so the AI can continue working with that context.
+Selecting `w` lets the AI continue the conversation with the selected project's stored notes already in context.
 
 ---
 
-## Chat History
+## Chat Messages
 
-The application maintains two related forms of chat state:
+All providers share the same internal `ChatMessage` model.
 
-- `ChatSession.messages`: active model context.
-- `Chat.msgHistory`: accumulated history used for full-history viewing and saving.
-
-### Save history
-
-Use:
+A message can contain:
 
 ```text
-/save
+role
+text
+inline_data
+mimeType
+filename
 ```
 
-The program asks for a chat name and writes a JSON file under:
+The file-related fields are optional and are populated only for attachment messages.
+
+Typical roles are:
 
 ```text
-chatHistory/
+user
+model
+system
 ```
 
-Saved filenames include the supplied name, current date, and a UUID.
+`MessagesMapper` converts these shared messages into the JSON format required by each provider.
 
-### Load history
-
-Use:
-
-```text
-/load
-```
-
-The CLI lists regular files in `chatHistory/`, lets you choose one by index, deserializes it into `ChatMessage` objects, and copies the loaded messages into the active `ChatSession`.
-
-### Saved attachments
-
-When a message originally contained inline Base64 file data, the long Base64 payload is not copied into full history. Instead, the saved history records a text note indicating that a file was attached and preserves its filename.
+For Groq/NVIDIA-compatible requests, the internal `model` role is converted to `assistant`.
 
 ---
 
 ## File Attachments
 
-Use:
+Files to be sent are placed in:
+
+```text
+data/sendFiles/
+```
+
+Then use:
 
 ```text
 /send
 ```
 
-Files are read from:
+The application:
 
-```text
-sendFiles/
-```
+1. Reads the selected file.
+2. Encodes it as Base64.
+3. Detects its MIME type with `Files.probeContentType`.
+4. Stores the encoded data, MIME type, and filename in a `ChatMessage`.
 
-The current flow is:
+### Gemini
 
-1. Enter a filename.
-2. The program checks whether it exists.
-3. The complete file is read into memory.
-4. It is Base64 encoded.
-5. `Files.probeContentType()` is used to determine the MIME type.
-6. A `ChatMessage` stores the prompt, Base64 data, MIME type, and filename.
+Gemini receives the text and file as separate message parts using Gemini's `inline_data` structure.
 
-### Gemini attachments
+### Groq and NVIDIA
 
-Gemini receives the Base64 data directly as an `inline_data` part.
+Groq and NVIDIA chat requests are text-based in the current implementation. When the latest message contains a file, the application first sends that message to Gemini, adds Gemini's file interpretation back into the conversation, and then continues with the selected Groq or NVIDIA model.
 
-### Groq and NVIDIA attachments
-
-Groq and NVIDIA currently do not receive the raw attachment directly from this application. The attachment message is first sent to `GeminiAgent`; Gemini's returned text is then inserted into the conversation before the Groq or NVIDIA request is made.
-
-Because of this design, sending files while using Groq or NVIDIA currently requires a valid `GEMINI_API_KEY` as well.
+Because of this bridge, using attachments with Groq or NVIDIA also requires a valid `GEMINI_API_KEY`.
 
 ---
 
-## Conversation Rules and Summarization
+## Streaming
 
-`Rules` contains two optional behaviors:
+Streaming is currently enabled for:
 
-```text
-maxTokens
-autoSummarize
+- Groq
+- NVIDIA Nemotron
+
+`GroqAgent` and `NvidiaAgent` read the Server-Sent Events response line by line, print each content chunk as it arrives, and collect the chunks into the final `Result` returned to the main chat loop.
+
+Both request builders enable:
+
+```json
+"stream": true,
+"stream_options": {
+  "include_usage": true
+}
 ```
 
-Both are `false` by default when the application starts.
+This allows the application to retrieve the final token usage while still displaying the answer progressively.
 
-Use:
+Gemini currently uses a normal non-streaming response.
 
-```text
-/rules
+---
+
+## Token Tracking
+
+Each provider returns a common:
+
+```java
+public record Result(String text, int tokens) {}
 ```
 
-to view and optionally replace the current rule configuration.
+The `tokens` field stores the provider-reported total token count for the request.
 
-The current rule editor expects Java boolean input:
+After a completed response the CLI prints the approximate request duration and total token count (`TTC`).
 
-```text
-true
-false
-```
+Token usage is also used by the summarization system.
 
-### `maxTokens`
+---
 
-When enabled, a compression-oriented instruction is inserted into model context. Nemotron receives it as a `system` message. Other providers receive it as a user/model pair.
+## Conversation Summarization
+
+Long conversations resend an increasingly large message list to the provider. AI Project Tracker includes both manual and automatic summarization to reduce that context size.
 
 ### Manual summarization
 
@@ -401,86 +395,260 @@ Use:
 /summarize
 ```
 
-The command is allowed when the current API-reported token count is at least `1000`.
+Manual summarization is available when the current provider-reported token count is at least **1000**.
+
+The application asks the AI to preserve important information such as:
+
+- facts and user preferences
+- decisions already made
+- technical details
+- class, method, variable, API, and model names
+- constraints
+- unresolved tasks and questions
+- important code details
+- recent conversation state
+
+After the summary is returned, the active context is replaced with a much smaller summary-based conversation.
 
 ### Automatic summarization
 
-When `autoSummarize` is enabled, the chat loop attempts automatic summarization once the stored token count reaches `10000`.
+When the `autoSummarize` rule is enabled, the application automatically summarizes the conversation once the session token count reaches **10,000** or more.
 
-The summarization prompt attempts to preserve important facts, preferences, technical details, decisions, code identifiers, constraints, unresolved work, and recent conversation context while removing filler and repetition.
+Gemini is used for automatic summarization by default. Nemotron sessions use `NvidiaAgent` instead.
 
-For Gemini/Groq sessions, summarization is currently performed through Gemini. For Nemotron sessions, it is performed through Nemotron.
+---
+
+## Session Rules
+
+Use:
+
+```text
+/rules
+```
+
+to inspect or edit the current rules.
+
+The current `Rules` class contains three settings:
+
+| Rule | Purpose |
+|---|---|
+| `maxTokens` | Inject a compact-response instruction designed to minimize unnecessary output tokens |
+| `autoSummarize` | Automatically summarize the active context at 10,000+ tokens |
+| `autoSave` | Automatically append conversation turns to a local text file |
+
+A new application session starts with all three disabled:
+
+```text
+maxTokens: false
+autoSummarize: false
+autoSave: false
+```
+
+### `maxTokens`
+
+When enabled, a prompt is added that asks the model to remove repetition, greetings, filler, and irrelevant content and to answer in a compact format.
+
+For Nemotron this is sent as a `system` message. For the other current providers it is inserted into the conversation as a user/model exchange.
+
+### `autoSave`
+
+Each `Rules` object receives a UUID. When autosave is enabled, conversation turns are appended to:
+
+```text
+data/autoSave/<uuid>.txt
+```
+
+Autosaves are plain text and separate from manually saved JSON chat histories.
+
+---
+
+## Chat History
+
+The application maintains two related forms of history.
+
+### Active context
+
+`ChatSession.messages` contains the messages currently being sent back to the selected AI provider.
+
+This list may become smaller after summarization or when a new chat is started.
+
+### Full session history
+
+`Chat.msgHistory` accumulates user/model turns separately from the active context.
+
+For attached files, the full history stores a readable filename marker instead of duplicating the Base64 payload.
+
+### History viewer
+
+`HistoryWindow` provides a read-only Swing view for either list:
+
+```text
+/history   -> active context
+/fhistory  -> full accumulated history
+```
+
+Messages are formatted as `YOU`, the current AI name, or `SYSTEM`.
+
+### Saving history
+
+Use:
+
+```text
+/save
+```
+
+Saved conversations are written as JSON to:
+
+```text
+data/chatHistory/
+```
+
+Filenames include the chosen chat name, the current date, and a UUID.
+
+### Loading history
+
+Use:
+
+```text
+/load
+```
+
+The application lists saved JSON conversations and lets you choose one to restore into the active context.
 
 ---
 
 ## Architecture
 
-The application uses a small provider abstraction:
+The application uses a small provider abstraction so the main chat loop does not need separate logic for each API.
 
-```text
-                       +-------------------+
-                       |       Chat        |
-                       +---------+---------+
-                                 |
-                  +--------------+--------------+
-                  |                             |
-                  v                             v
-        +------------------+          +-------------------+
-        |  ChatSession     |          | ProjectCommands   |
-        +------------------+          +-------------------+
-                  |
-                  v
-             +---------+
-             | AiAgent |
-             +----+----+
-                  |
-      +-----------+-----------+
-      |           |           |
-      v           v           v
- GeminiAgent   GroqAgent   NvidiaAgent
-      |           |           |
-      v           v           v
-  Gemini API   Groq API   NVIDIA NIM
+```mermaid
+graph TD
+    Chat[Chat / CLI] --> Session[ChatSession]
+    Chat --> Commands[ProjectCommands]
+    Commands --> Commands2[ProjectCommands2]
+    Commands --> Projects[Project]
+    Commands --> Rules[Rules]
+    Commands2 --> History[HistoryWindow]
+
+    Chat --> Agent[AiAgent]
+    Agent --> Gemini[GeminiAgent]
+    Agent --> Groq[GroqAgent]
+    Agent --> Nvidia[NvidiaAgent]
+
+    Gemini --> Mapper[MessagesMapper]
+    Groq --> Mapper
+    Nvidia --> Mapper
+
+    Mapper --> GeminiAPI[Gemini API]
+    Mapper --> GroqAPI[Groq API]
+    Mapper --> NvidiaAPI[NVIDIA NIM API]
 ```
 
 ### `AiAgent`
 
-Provider implementations expose the same core contract:
+All providers implement:
 
 ```java
-Result ask(List<ChatMessage> messages, String ver);
-String getName();
+public interface AiAgent {
+    Result ask(List<ChatMessage> messages, String ver)
+            throws IOException, InterruptedException;
+
+    String getName();
+    boolean isStream();
+}
 ```
 
-### `Result`
+This makes provider selection independent from most of the main chat workflow.
 
-`Result` is a Java record containing:
+### `Chat`
+
+Main application entry point and conversation loop.
+
+Responsibilities include:
+
+- startup/data-directory initialization
+- model selection
+- active provider selection
+- reading user input
+- command dispatch
+- provider calls and retry behavior
+- response timing
+- token display
+- full-history accumulation
+- automatic summarization/autosave triggers
+
+### `ChatSession`
+
+Holds the mutable state of the active conversation:
 
 ```text
-text
+projects
+messages
+userMessage
 tokens
 ```
 
 ### `MessagesMapper`
 
-`MessagesMapper` converts internal `ChatMessage` objects into provider-specific JSON:
+Builds provider-specific JSON request bodies.
 
-- Gemini `contents`/`parts`
+It currently supports:
+
+- Gemini `contents` / `parts`
+- Gemini Base64 `inline_data`
 - Groq OpenAI-compatible `messages`
-- NVIDIA OpenAI-compatible `messages` plus Nemotron generation parameters
+- NVIDIA OpenAI-compatible `messages`
+- streaming configuration and usage reporting
+- Nemotron generation parameters
 
-### `ChatSession`
+### `GeminiAgent`
 
-`ChatSession` stores:
+Handles:
 
-- tracked projects
-- active messages
-- current user message
-- latest reported token count
+- `GEMINI_API_KEY`
+- Gemini request construction
+- default/lite model selection
+- HTTP requests
+- response parsing
+- token extraction
+
+### `GroqAgent`
+
+Handles:
+
+- `GROQ_API_KEY`
+- GPT-OSS / Qwen requests through Groq
+- streamed response parsing
+- token extraction from streaming usage data
+- Gemini-assisted file preprocessing
+
+### `NvidiaAgent`
+
+Handles:
+
+- `NVIDIA_API_KEY`
+- Nemotron requests through NVIDIA NIM
+- streamed response parsing
+- token extraction from streaming usage data
+- Nemotron generation configuration
+- optional system instructions
+- Gemini-assisted file preprocessing
+
+### `ProjectCommands` / `ProjectCommands2`
+
+Implement the two-page slash-command system, including project operations, file sending, history management, summarization, rules, and navigation.
+
+### `Rules`
+
+Stores the current optional session behavior and implements automatic summarization and autosave.
 
 ### `HistoryWindow`
 
-`HistoryWindow` provides a simple read-only Swing representation of either active context or full accumulated history.
+A Swing `JFrame` containing a read-only `JTextArea` for inspecting conversation history without interrupting the CLI.
+
+### `ChatWindow`
+
+Currently reserved for the future full Swing chat interface. The class exists but does not yet contain an implementation.
 
 ---
 
@@ -488,169 +656,163 @@ tokens
 
 ```text
 ai-project-tracker/
+├── .gitignore
 ├── LICENSE
 ├── README.md
 ├── pom.xml
-├── projects.json
-├── chatHistory/
-├── sendFiles/
-└── src/
-    ├── main/
-    │   ├── java/com/lior/tracker/
-    │   │   ├── AppPaths.java
-    │   │   ├── Chat.java
-    │   │   ├── ChatMessage.java
-    │   │   ├── agent/
-    │   │   │   ├── AiAgent.java
-    │   │   │   ├── GeminiAgent.java
-    │   │   │   ├── GroqAgent.java
-    │   │   │   ├── NvidiaAgent.java
-    │   │   │   └── Result.java
-    │   │   ├── gui/
-    │   │   │   └── HistoryWindow.java
-    │   │   └── model/
-    │   │       ├── ChatSession.java
-    │   │       ├── MessagesMapper.java
-    │   │       ├── Project.java
-    │   │       ├── ProjectCommands.java
-    │   │       ├── ProjectCommands2.java
-    │   │       └── Rules.java
-    │   └── resources/
-    │       └── META-INF/MANIFEST.MF
-    └── test/
-        └── java/
+│
+├── src/
+│   ├── main/
+│   │   ├── java/com/lior/tracker/
+│   │   │   ├── AppPaths.java
+│   │   │   ├── Chat.java
+│   │   │   ├── ChatMessage.java
+│   │   │   │
+│   │   │   ├── agent/
+│   │   │   │   ├── AiAgent.java
+│   │   │   │   ├── GeminiAgent.java
+│   │   │   │   ├── GroqAgent.java
+│   │   │   │   ├── NvidiaAgent.java
+│   │   │   │   └── Result.java
+│   │   │   │
+│   │   │   ├── gui/
+│   │   │   │   ├── ChatWindow.java
+│   │   │   │   └── HistoryWindow.java
+│   │   │   │
+│   │   │   └── model/
+│   │   │       ├── ChatSession.java
+│   │   │       ├── MessagesMapper.java
+│   │   │       ├── Project.java
+│   │   │       ├── ProjectCommands.java
+│   │   │       ├── ProjectCommands2.java
+│   │   │       └── Rules.java
+│   │   │
+│   │   └── resources/
+│   │       └── META-INF/
+│   │           └── MANIFEST.MF
+│   │
+│   └── test/
+│       └── java/
+│
+└── data/                  # generated/local runtime data; ignored by Git
+    ├── projects.json
+    ├── chatHistory/
+    ├── sendFiles/
+    └── autoSave/
 ```
 
-`src/test/java/` currently exists but contains no automated tests.
+The manifest declares:
+
+```text
+Main-Class: com.lior.tracker.Chat
+```
 
 ---
 
-## Data Storage
+## Local Data and Git
 
-The current working implementation uses these root-level paths:
+Runtime data is intentionally ignored by Git:
 
-```text
-projects.json
-chatHistory/
-sendFiles/
+```gitignore
+data/
 ```
 
-`AppPaths.java` already defines a planned `data/` layout:
+This prevents local conversations, project notes, attachments, and autosaves from being committed accidentally.
 
-```text
-data/projects.json
-data/chatHistory/
-data/sendFiles/
+`AppPaths` centralizes the runtime locations:
+
+```java
+public static final Path DATA = Path.of("data/");
+public static final Path PROJECTS = DATA.resolve("projects.json");
+public static final Path HISTORY = DATA.resolve("chatHistory/");
+public static final Path FILES = DATA.resolve("sendFiles/");
+public static final Path AUTOSAVE = DATA.resolve("autoSave/");
 ```
-
-but those constants are **not yet wired into the rest of the application**. Until that refactor is completed, moving the runtime files into `data/` will break the existing persistence code.
 
 ---
 
 ## Error Handling
 
-### Missing API keys
+Current provider implementations check for missing API keys before sending a request.
 
-Each provider checks its required environment variable and throws an `IllegalArgumentException` if it is missing or blank.
+HTTP failures produce an error containing the response status and, where available, the response body. Rate-limit responses are handled as API errors and the main chat loop performs a retry/fallback attempt.
 
-### HTTP errors
+For Gemini, the retry uses the Lite model. For the other providers, the same provider configuration is attempted again.
 
-For all current providers:
+---
 
-- HTTP `429` is reported as a quota/rate-limit error.
-- Any non-`200` response throws a runtime error that includes the HTTP status and response body.
+## Current Development Notes
 
-### Fallback behavior
+The project is functional but still actively evolving.
 
-The main chat loop currently retries once after a `RuntimeException`.
+Current areas under development include:
 
-For Gemini, the retry switches from:
+- Full Swing chat interface (`ChatWindow`)
+- More robust command handling
+- More flexible provider/model configuration
+- Reduced duplicated logic between Groq and NVIDIA agents
+- Improved persistence/session management
+- Automated tests
+- More advanced long-term AI memory/context management
 
-```text
-gemini-3.5-flash
+`src/test/java/` currently contains no automated tests.
+
+---
+
+## Adding Another AI Provider
+
+To integrate another provider:
+
+1. Create a class implementing `AiAgent`.
+2. Implement `ask(...)`, `getName()`, and `isStream()`.
+3. Add the provider-specific message/request mapping.
+4. Read its API key from an environment variable.
+5. Return responses as `Result`.
+6. Register the provider in the model-selection logic in `Chat`.
+
+Example skeleton:
+
+```java
+public class ExampleAgent implements AiAgent {
+    @Override
+    public Result ask(List<ChatMessage> messages, String ver)
+            throws IOException, InterruptedException {
+        // Build request
+        // Send request
+        // Parse response
+        return new Result("response", 0);
+    }
+
+    @Override
+    public String getName() {
+        return "Example";
+    }
+
+    @Override
+    public boolean isStream() {
+        return false;
+    }
+}
 ```
 
-to:
-
-```text
-gemini-3.5-flash-lite
-```
-
-For Groq and NVIDIA, the `ver` argument does not currently select a different model, so their retry repeats essentially the same request.
-
 ---
 
-## Security and Privacy
+## Security
 
-### API keys
+Do not commit:
 
-API keys are read from environment variables and are not stored directly in the Java source.
+- API keys
+- `.env` files containing secrets
+- personal conversation history
+- private project notes
+- files placed in `data/sendFiles/`
 
-Gemini currently places its key in the request URL query string. A future improvement is to move it to the `x-goog-api-key` request header.
+The repository's `.gitignore` excludes local runtime data and common IDE/build artifacts.
 
-### Local files
-
-The application may store local project notes and conversation history in plaintext JSON. Treat these files as potentially sensitive.
-
-### External providers
-
-Prompts, conversation history, and attachments are sent to the selected external AI provider. Groq/NVIDIA attachment preprocessing additionally sends the attachment to Gemini.
-
-### Repository hygiene
-
----
-
-## Current Limitations
-
-The following limitations reflect the current source code rather than planned behavior:
-
-1. `AppPaths` is defined but not yet used by persistence and attachment code.
-2. Automatic summarization does not currently recalculate/reset `ChatSession.tokens` after replacing the conversation with its summary.
-3. If automatic summarization fails after the summary prompt is appended, that prompt can remain in active context.
-4. `/load` clears global history before a successful selection is guaranteed, so cancelling/invalid loading can replace active context with an empty history.
-5. `/resend` is still experimental and does not currently regenerate the normal completed assistant reply flow.
-6. API retry sleep values are currently `20` milliseconds, which is too short to be useful for most rate-limit recovery.
-7. Retry logic does not distinguish permanent errors such as `400`/`401` from transient network, `429`, or `5xx` errors.
-8. `HttpClient` instances are recreated for requests and no explicit request timeout is configured.
-9. Provider response parsing assumes normal success fields such as `usage`, `usageMetadata`, and the first candidate/choice are present.
-10. Groq/NVIDIA attachment preprocessing mutates the active conversation by inserting Gemini output and a synthetic user message.
-11. `/send` reads the complete attachment into memory and currently has no file-size limit.
-12. `/send` does not yet normalize and verify the requested path stays inside `sendFiles/`.
-13. Chat-history names are not sanitized before being used as filenames.
-14. Empty project lists are saved by inserting a placeholder project instead of serializing `[]`.
-15. Project status and date values are accepted as unchecked strings at the CLI boundary; invalid status text can leave `status` unset.
-16. `Rules()` expects `true`/`false`, not `y`/`n`.
-17. The multi-line paste delimiter is based on `eof\n` and may behave differently across platforms/newline formats.
-18. Chat/session/provider state is heavily static/global, which makes testing and future multiple-session support harder.
-19. No automated tests currently exist under `src/test/java`.
-20. No `.gitignore` is present in this source snapshot.
-
----
-
-## Development Roadmap
-
-Useful next steps, roughly in priority order:
-
-1. Finish the `AppPaths` migration and create runtime directories centrally.
-2. Fix load cancellation/failure so existing history is not destroyed.
-3. Complete `/resend` as a real response-regeneration flow.
-4. Make summarization operate on a copied message list and reset/recalculate tokens after success.
-5. Introduce shared HTTP infrastructure with timeouts and structured error classification.
-6. Implement sensible retry/backoff behavior for `429`, transient network failures, and selected `5xx` responses.
-7. Move Gemini authentication from the query string to the API-key request header.
-8. Move file preprocessing out of provider agents so agents do not mutate conversation state.
-9. Add path normalization, attachment-size validation, and filename sanitization.
-10. Save an empty project list as `[]` rather than creating a placeholder project.
-11. Validate project status/date input.
-12. Replace recursive command navigation with a simpler loop/state-machine design.
-13. Reduce static/global dependencies by passing model/session configuration through constructors.
-14. Add unit tests for commands, history loading, summarization, mapping, persistence, and path handling.
-15. Add a `.gitignore` before publishing private runtime state to GitHub.
+If an API key is ever committed publicly, revoke it immediately and generate a new one.
 
 ---
 
 ## License
 
-This project is licensed under the **MIT License**. See [`LICENSE`](LICENSE).
-
-Copyright (c) 2026 Lior Lazary.
+This project is licensed under the terms in [LICENSE](LICENSE).

@@ -2,6 +2,7 @@ package com.lior.tracker.model;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.lior.tracker.AppPaths;
 
 import java.io.File;
 import java.io.IOException;
@@ -42,7 +43,7 @@ public class Project {
     public void setNotes(String notes) {this.notes = notes;}
     public static List<Project> getProjects(boolean print) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
-        List<Project> projects = mapper.readValue(new File("projects.json"), new TypeReference<List<Project>>() {});
+        List<Project> projects = mapper.readValue(new File(AppPaths.PROJECTS.toUri()), new TypeReference<List<Project>>() {});
         if (!print) return projects;
         int i = 0;
         for (Project p : projects) {
