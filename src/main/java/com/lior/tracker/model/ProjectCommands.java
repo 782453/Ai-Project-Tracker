@@ -66,7 +66,7 @@ public class ProjectCommands {
                 saveProjects(session.getProjects());
                 break;
             case "/projects":
-                if(!Files.exists(Path.of("projects.json"))) {
+                if(!Files.exists(AppPaths.PROJECTS)) {
                     System.out.println("[ERROR] No projects file found");
                     break;
                 }

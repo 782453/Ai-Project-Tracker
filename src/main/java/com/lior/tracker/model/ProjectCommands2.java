@@ -3,8 +3,12 @@ package com.lior.tracker.model;
 import com.lior.tracker.Chat;
 import com.lior.tracker.ChatMessage;
 import com.lior.tracker.gui.HistoryWindow;
+import com.lior.tracker.memory.MemoryType;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Locale;
 import java.util.Scanner;
 
 public class ProjectCommands2 {
@@ -46,6 +50,45 @@ public class ProjectCommands2 {
                 ProjectCommands.setFlag(true);
                 session.setUserMessage(session.getMessages().getLast().getText());
                 session.getMessages().removeLast();
+                break;
+            case "/memory add":
+                System.out.print("Memory title: ");
+                String title = Chat.getInput().nextLine();
+                System.out.println("Memory content (type 'eof' to finish):");
+                StringBuilder contentBuilder = new StringBuilder();
+                String line;
+                while (!(line = Chat.getInput().nextLine()).equalsIgnoreCase("eof")) {
+                    if (!contentBuilder.isEmpty()) contentBuilder.append("\n");
+                    contentBuilder.append(line);
+                }
+                System.out.println("Memory types:");
+                for (MemoryType type : MemoryType.values()) System.out.println(type);
+                System.out.print("Memory type: ");
+                MemoryType memoryType = MemoryType.valueOf(Chat.getInput().nextLine().trim().toUpperCase(Locale.ROOT));
+                System.out.print("Project name: ");
+                String projectName = Chat.getInput().nextLine();
+                System.out.print("Importance (1-10): ");
+                int importance = Integer.parseInt(Chat.getInput().nextLine());
+                System.out.print("Memory tags: ");
+                String tagInput = Chat.getInput().nextLine().trim();
+                List<String> tags = tagInput.isBlank() ? List.of() : List.of(tagInput.split("\\s+"));
+                System.out.print("Memory related tags: ");
+                String relateTagInput = Chat.getInput().nextLine().trim();
+                List<String> related = relateTagInput.isBlank() ? List.of() : List.of(relateTagInput.split("\\s+"));
+                try {
+                    Chat.getMemoryService().remember(
+                            title,
+                            contentBuilder.toString(),
+                            memoryType,
+                            projectName,
+                            importance,
+                            tags,
+                            related
+                    );
+                    System.out.println("Memory saved.");
+                } catch (IOException e) {
+                    System.out.println("Failed to save memory.");
+                }
                 break;
             case "/exit":
                 System.exit(0);

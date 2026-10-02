@@ -1,5 +1,6 @@
 package com.lior.tracker;
 
+import com.lior.tracker.memory.*;
 import com.lior.tracker.model.ChatSession;
 import com.lior.tracker.agent.*;
 import com.lior.tracker.model.ProjectCommands;
@@ -7,9 +8,7 @@ import com.lior.tracker.model.Rules;
 
 import java.io.*;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 public class Chat {
     private static final Scanner input = new Scanner(System.in);
@@ -17,6 +16,9 @@ public class Chat {
     private static AiAgent agent;
     private static String groqModel;
     private static Rules rules =  new Rules(false, false, false);
+    private static final MemoryService memoryService = new MemoryService(new MarkdownMemoryStore());
+    private static final MemoryExtractor extractor = new MemoryExtractor();
+    private static Optional<MemoryCandidate>  candidate;
     public static void main(String[] args) throws IOException, InterruptedException, NullPointerException {
         dataCheck();
         System.out.println("AI-Project-Tracker");
@@ -118,6 +120,19 @@ public class Chat {
                 else ProjectCommands.setLoad(false);
             }
             if(!session.getMessages().isEmpty() && rules.isAutoSave()) Rules.autoSaveChat(session, rules.getUuid());
+            if(reply.text().isEmpty()) continue;
+            try {
+                candidate = extractor.extract(session.getUserMessage(), reply.text(), agent);
+            } catch (NullPointerException e) {
+                try {
+                    candidate = extractor.extract(session.getUserMessage(), reply.text(), agent);
+                }  catch (NullPointerException e1) {continue;}
+            }
+            if(candidate.isEmpty()) continue;
+            System.out.print("\nSave memory (y/n)? ");
+            if (!input.nextLine().equalsIgnoreCase("y")) continue;
+            memoryService.remember(candidate.get().title(), candidate.get().content(), candidate.get().type(),
+                    candidate.get().project(), candidate.get().importance(), candidate.get().tags(), candidate.get().related());
         }
     }
     public static Scanner getInput() {return input;}
@@ -147,7 +162,9 @@ public class Chat {
         if(!Files.exists(AppPaths.HISTORY)) Files.createDirectory(AppPaths.HISTORY);
         if(!Files.exists(AppPaths.FILES)) Files.createDirectory(AppPaths.FILES);
         if(!Files.exists(AppPaths.AUTOSAVE)) Files.createDirectory(AppPaths.AUTOSAVE);
+        if(!Files.exists(AppPaths.MEMORY)) Files.createDirectory(AppPaths.MEMORY);
 
     }
     public static AiAgent getAgent() {return agent;}
+    public static MemoryService getMemoryService() {return memoryService;}
 }

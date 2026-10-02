@@ -8,4 +8,5 @@ public final class AppPaths {
     public static final Path HISTORY = DATA.resolve("chatHistory/");
     public static final Path FILES = DATA.resolve("sendFiles/");
     public static final Path AUTOSAVE = DATA.resolve("autoSave/");
+    public static final Path MEMORY = DATA.resolve("memory/");
 }
