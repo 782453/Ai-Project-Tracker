@@ -26,6 +26,8 @@ public class MemoryService {
     }
     public List<MemoryEntry> search(String query, int limit) throws IOException {
         if(query == null || query.isBlank() || limit <= 0) return new ArrayList<>();
+        char[] invalid = {'?', '!', '.', ',', ':'};
+        for(char c : invalid) query = query.replace(c, ' ');
         query = query.toLowerCase(Locale.ROOT);
         Map<MemoryEntry, Integer> map = new HashMap<>();
         int temp;
@@ -60,5 +62,7 @@ public class MemoryService {
         for(int i = 0; i < limit; i++) ranked.add(search.get(i));
         return ranked;
     }
-
+    public void compressMemories() throws IOException {
+        //TODO: think about the idea. right now it's looking for similar words in the title and content. maybe use search?
+    }
 }

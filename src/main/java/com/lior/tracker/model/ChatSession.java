@@ -1,6 +1,7 @@
 package com.lior.tracker.model;
 
 import com.lior.tracker.ChatMessage;
+import com.lior.tracker.memory.MemoryEntry;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,11 +11,13 @@ public class ChatSession {
     private List<ChatMessage> messages;
     private String userMessage;
     private int tokens;
+    private List<MemoryEntry> memories;
     public ChatSession(List<Project> projects, List<ChatMessage> messages, String userMessage, int tokens) {
         this.projects = projects;
         this.messages = messages;
         this.userMessage = userMessage;
         this.tokens = tokens;
+        this.memories = new ArrayList<>();
     }
 
     public List<Project> getProjects() {return projects;}
@@ -31,4 +34,6 @@ public class ChatSession {
     public void setMessages(List<ChatMessage> messages) {this.messages = messages;}
     public void setUserMessage(String userMessage) {this.userMessage = userMessage;}
     public void setTokens(int tokens) {this.tokens = tokens;}
+    public List<MemoryEntry> getMemories() {return this.memories;}
+    public void setMemories(List<MemoryEntry> memories) {this.memories = new ArrayList<>(memories);}
 }

@@ -22,6 +22,8 @@ public class ProjectCommands2 {
                         \t/fhistory - View entire session history
                         \t/rules - Change session rules
                         \t/resend - Resend last message
+                        \t/memory add - Save memory manually
+                        \t/memory comp - Compressing memories in vault
                         \t/exit - Exit the program
                         \t/.. - Previous page""");
                 break;
@@ -88,6 +90,13 @@ public class ProjectCommands2 {
                     System.out.println("Memory saved.");
                 } catch (IOException e) {
                     System.out.println("Failed to save memory.");
+                }
+                break;
+            case "/memory comp":
+                try {
+                    Chat.getMemoryService().compressMemories();
+                } catch (IOException e) {
+                    System.out.println("Failed to compress memories.");
                 }
                 break;
             case "/exit":

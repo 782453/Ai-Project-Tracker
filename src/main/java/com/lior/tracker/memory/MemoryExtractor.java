@@ -21,6 +21,7 @@ public class MemoryExtractor {
             Analyze only the latest exchange and decide whether it introduced
             information worth storing in long-term memory.
             Worth remembering:
+            - everything the user says to remember
             - important facts
             - preferences
             - decisions
@@ -47,7 +48,7 @@ public class MemoryExtractor {
               "tags": ["tag1", "tag2"]
               "related": ["[[rel1]]", "[[rel2]]"]
             }
-            the related are common related tags
+            the related are common related tags (should also include at least one of the types)
             """));
         Result reply = null;
         while(reply == null){

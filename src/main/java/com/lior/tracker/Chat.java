@@ -65,6 +65,7 @@ public class Chat {
         System.out.println("Enter /? to view commands");
         while (true) {
             //TODO: test /resend command
+            //TODO: implement /memory compress
             ProjectCommands.setFlag(false);
             input.reset();
             if(session.getTokens() >= 10000 && rules.isAutoSummarize()) {
@@ -80,6 +81,8 @@ public class Chat {
             if (!session.getUserMessage().equals("/send")) session.getMessages().add(new ChatMessage("user", session.getUserMessage()));
             reply = new Result("", 0);
             try {
+                session.setMemories(memoryService.search(session.getUserMessage(), 5));
+                if(!session.getMemories().isEmpty()) memoriesToMessages(session);
                 reply = agent.ask(session.getMessages(), "default");
                 endTime = System.currentTimeMillis() - startTime;
             } catch (RuntimeException e) {
@@ -114,6 +117,7 @@ public class Chat {
                     }
                     session.getMessages().add(new ChatMessage("user", "Your next message should be the summary of our chat"));
                 }
+                if(!session.getMemories().isEmpty()) removeMemories(session);
                 session.getMessages().add(new ChatMessage("model", reply.text()));
                 session.setTokens(reply.tokens());
                 if(!ProjectCommands.isLoad()) History(session.getLastTwoMessage());
@@ -167,4 +171,18 @@ public class Chat {
     }
     public static AiAgent getAgent() {return agent;}
     public static MemoryService getMemoryService() {return memoryService;}
+    public static void memoriesToMessages(ChatSession session) {
+        StringBuilder newUserMessage = new StringBuilder();
+        newUserMessage.append(session.getMessages().getLast().getText() + "\n[Relevant memories]:\n");
+        for(MemoryEntry memory: session.getMemories()){
+            newUserMessage.append("[-] Title: ").append(memory.title()).append("\n")
+                    .append("[-] Content: ").append(memory.content()).append("\n");
+        }
+        session.getMessages().removeLast();
+        session.getMessages().add(new ChatMessage("user", newUserMessage.toString()));
+    }
+    public static void removeMemories(ChatSession session) {
+        session.getMessages().removeLast();
+        session.getMessages().add(new ChatMessage("user", session.getUserMessage()));
+    }
 }
