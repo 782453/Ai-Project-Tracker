@@ -5,6 +5,8 @@ import com.lior.tracker.model.ChatSession;
 import com.lior.tracker.agent.*;
 import com.lior.tracker.model.ProjectCommands;
 import com.lior.tracker.model.Rules;
+import dev.langchain4j.model.embedding.EmbeddingModel;
+import dev.langchain4j.model.embedding.onnx.allminilml6v2.AllMiniLmL6V2EmbeddingModel;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -20,6 +22,10 @@ public class Chat {
     private static final MemoryExtractor extractor = new MemoryExtractor();
     private static Optional<MemoryCandidate>  candidate;
     public static void main(String[] args) throws IOException, InterruptedException, NullPointerException {
+        EmbeddingModel model = new AllMiniLmL6V2EmbeddingModel();
+        float[] vec = model.embed("My name is Lior Lazary").content().vector();
+        float[] vec1 = model.embed("User's name is Lior lazary").content().vector();
+        double test = cosine(vec, vec1);
         dataCheck();
         System.out.println("AI-Project-Tracker");
         System.out.println("Ai models list:\n[0] Gemini\n[1] ChatGPT\n[2] Qwen\n[3] Nemotron");
@@ -184,5 +190,14 @@ public class Chat {
     public static void removeMemories(ChatSession session) {
         session.getMessages().removeLast();
         session.getMessages().add(new ChatMessage("user", session.getUserMessage()));
+    }
+    public static double cosine(float[] vec, float[] vec1) {
+        double dot = 0, na = 0, nb = 0;
+        for(int i = 0; i < vec.length; i++) {
+            dot += vec[i] * vec1[i];
+            na += vec[i] * vec[i];
+            nb += vec1[i] * vec1[i];
+        }
+        return dot / (Math.sqrt(na) * Math.sqrt(nb));
     }
 }

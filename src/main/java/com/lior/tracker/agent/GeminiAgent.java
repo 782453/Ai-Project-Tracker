@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.lior.tracker.ChatMessage;
+import com.lior.tracker.Env;
 import com.lior.tracker.model.MessagesMapper;
 
 import java.io.IOException;
@@ -18,7 +19,7 @@ public class GeminiAgent implements AiAgent {
     public boolean isStream(){return this.stream;}
     private final String name = "Gemini";
     public Result ask(List<ChatMessage> messages, String ver) throws IOException, InterruptedException {
-        String apiKey = System.getenv("GEMINI_API_KEY");
+        String apiKey = Env.get("GEMINI_API_KEY");
         if(apiKey == null || apiKey.isBlank()) {
             throw new IllegalArgumentException("\nGEMINI_API_KEY environment variable is required.");
         }

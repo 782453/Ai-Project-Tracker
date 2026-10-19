@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.lior.tracker.Chat;
 import com.lior.tracker.ChatMessage;
+import com.lior.tracker.Env;
 import com.lior.tracker.model.MessagesMapper;
 
 import java.io.BufferedReader;
@@ -30,7 +31,7 @@ public class GroqAgent implements AiAgent {
             messages.add(new ChatMessage("model", sendFile));
             messages.add(new ChatMessage("user", "I didn't see your previous message so i need you to reprocess it and send it back to me."));
         }
-        String apiKey = System.getenv("GROQ_API_KEY");
+        String apiKey = Env.get("GROQ_API_KEY");
         if(apiKey == null || apiKey.isBlank()) {
             throw new IllegalArgumentException("\nGROQ_API_KEY environment variable is required.");
         }
