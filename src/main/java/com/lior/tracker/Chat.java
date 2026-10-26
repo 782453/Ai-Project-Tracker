@@ -22,10 +22,10 @@ public class Chat {
     private static final MemoryExtractor extractor = new MemoryExtractor();
     private static Optional<MemoryCandidate>  candidate;
     public static void main(String[] args) throws IOException, InterruptedException, NullPointerException {
-        EmbeddingModel model = new AllMiniLmL6V2EmbeddingModel();
-        float[] vec = model.embed("My name is Lior Lazary").content().vector();
-        float[] vec1 = model.embed("User's name is Lior lazary").content().vector();
-        double test = cosine(vec, vec1);
+        //EmbeddingModel model = new AllMiniLmL6V2EmbeddingModel();
+        //float[] vec = model.embed("My name is Lior Lazary").content().vector();
+        //float[] vec1 = model.embed("User's name is Lior lazary").content().vector();
+        //double test = cosine(vec, vec1);
         dataCheck();
         System.out.println("AI-Project-Tracker");
         System.out.println("Ai models list:\n[0] Gemini\n[1] ChatGPT\n[2] Qwen\n[3] Nemotron");
